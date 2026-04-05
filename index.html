@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <title>PokéDex Tracker · PokeMMO</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+      background: #eef2f5;
+      margin: 0;
+      padding: 16px 12px 40px;
+      color: #1a2c3e;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 28px;
+      padding: 20px 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .card-header {
+      font-weight: 700;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+      border-left: 5px solid #f5b042;
+      padding-left: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .progress-bar-container {
+      background: #e2e8f0;
+      border-radius: 30px;
+      height: 12px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    .progress-bar {
+      background: #2b7a4b;
+      height: 100%;
+      width: 0%;
+      border-radius: 30px;
+      transition: width 0.2s ease;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0 8px;
+    }
+    .filter-chip {
+      background: #e9edf2;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.1s;
+      touch-action: manipulation;
+    }
+    .filter-chip.active {
+      background: #2c6e9e;
+      color: white;
+    }
+    .filter-chip.disabled {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border-radius: 44px;
+      border: 1px solid #cbd5e1;
+      background: #fefcf5;
+      margin-bottom: 16px;
+    }
+
+    /* Character bar - cleaner */
+    .character-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      background: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 60px;
+    }
+    .character-select {
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 40px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      flex: 1;
+      min-width: 120px;
+    }
+    .char-btn {
+      background: #e9edf2;
+      color: #1a2c3e;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      border-radius: 40px;
+      box-shadow: none;
+    }
+    .char-btn.primary {
+      background: #2c6e9e;
+      color: white;
+    }
+    .char-btn.danger {
+      background: #fee2e2;
+      color: #b34e3a;
+    }
+
+    .pokedex-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      max-height: 550px;
+      overflow-y: auto;
+      padding: 4px 2px;
+    }
+
+    .pokemon-card {
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 10px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.1s ease;
+      border: 2px solid transparent;
+      position: relative;
+      touch-action: manipulation;
+    }
+    .pokemon-card.caught {
+      background: #e0f0e8;
+      opacity: 0.75;
+      border-color: #2b7a4b;
+    }
+    .pokemon-card:active {
+      transform: scale(0.97);
+    }
+    .pokemon-sprite {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      margin: 0 auto;
+      display: block;
+    }
+    .pokemon-name {
+      font-weight: 600;
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+    .caught-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #2b7a4b;
+      color: white;
+      border-radius: 30px;
+      padding: 2px 6px;
+      font-size: 0.65rem;
+      font-weight: bold;
+    }
+    .missing-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #b34e3a;
+      color: white;
+      border-radius: 30px;
+      padding: 2px 6px;
+      font-size: 0.65rem;
+    }
+
+    .route-card {
+      background: #fef9e6;
+      border-left: 5px solid #f5b042;
+      margin-bottom: 12px;
+      padding: 12px 16px;
+      border-radius: 24px;
+    }
+    .route-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .small-note {
+      font-size: 0.7rem;
+      color: #6c7a8a;
+      margin-top: 8px;
+      text-align: center;
+    }
+    button {
+      background: #2c6e9e;
+      border: none;
+      color: white;
+      font-weight: 500;
+      padding: 10px 18px;
+      border-radius: 44px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button:active { transform: scale(0.97); }
+    footer {
+      font-size: 0.7rem;
+      text-align: center;
+      color: #6c7a8a;
+      margin-top: 28px;
+    }
+    @media (max-width: 500px) {
+      .pokedex-grid { grid-template-columns: repeat(2, 1fr); }
+      .pokemon-sprite { width: 60px; height: 60px; }
+    }
+    .data-status {
+      font-size: 0.75rem;
+      background: #eef2f6;
+      padding: 6px 12px;
+      border-radius: 24px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .warning {
+      background: #fff3e0;
+      color: #b45f06;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <span>📖 PokéDex Tracker · PokeMMO</span>
+      <span id="progressText">0/0 (0%)</span>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="data-status" id="dataStatus">📀 Loading Pokémon data...</div>
+  </div>
+
+  <!-- Character selector (clean, no extra text) -->
+  <div class="card">
+    <div class="character-bar">
+      <select id="characterSelect" class="character-select"></select>
+      <button id="addCharacterBtn" class="char-btn primary">+ New</button>
+      <button id="renameCharacterBtn" class="char-btn">✏️ Rename</button>
+      <button id="deleteCharacterBtn" class="char-btn danger">🗑 Delete</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">🔍 Filters</div>
+    <input type="text" id="searchInput" class="search-box" placeholder="Search Pokémon...">
+    <div><strong>Region</strong></div>
+    <div class="filter-group" id="regionFilters"></div>
+    <div><strong>Encounter Type</strong></div>
+    <div class="filter-group" id="encounterFilters"></div>
+    <div class="small-note">Grass/Dark Grass/Cave/Water = highest priority. Fishing/Rocks/Headbutt = lower.<br>Special methods (Dust/Shadow/Inside) are excluded from route suggestions.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">📋 Pokédex</div>
+    <div class="pokedex-grid" id="pokedexGrid">Loading...</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span>🗺️ Best Routes (do first = highest score)</span>
+      <button id="refreshRoutesBtn" style="background:#5a6e7c; padding: 6px 14px;">⟳ Refresh</button>
+    </div>
+    <div id="routesOutput">Load data to see routes</div>
+  </div>
+  <footer>✓ Tap any Pokémon to mark caught · Progress saves per character · Data from PokeMMO Hub</footer>
+</div>
+
+<script>
+  // Scoring system
+  const ENCOUNTER_BASE = {
+    "grass": 9, "dark grass": 8, "cave": 7, "water": 6,
+    "super rod": 5, "good rod": 4, "old rod": 3, "rocks": 2, "headbutt": 1
+  };
+  const RARITY_BONUS = {
+    "very common": 0, "horde": 0, "common": 1, "uncommon": 3,
+    "rare": 5, "very rare": 8, "lure": 12
+  };
+
+  // Encounter types to EXCLUDE from route suggestions (special methods)
+  const EXCLUDED_ENCOUNTERS = new Set(["inside", "honey tree", "dust cloud", "fishing", "shadow", "special"]);
+
+  function normalizeEnc(enc) {
+    let s = (enc || "").toLowerCase().trim();
+    if (s === "dark grass") return "dark grass";
+    if (s === "super rod") return "super rod";
+    if (s === "good rod") return "good rod";
+    if (s === "old rod") return "old rod";
+    if (s === "headbutt") return "headbutt";
+    if (s === "rocks") return "rocks";
+    if (s === "cave") return "cave";
+    if (s === "water") return "water";
+    if (s === "grass") return "grass";
+    return s;
+  }
+
+  function normalizeRarity(r) {
+    let low = (r || "").toLowerCase();
+    if (low === "very common") return "very common";
+    if (low === "horde") return "horde";
+    if (low === "common") return "common";
+    if (low === "uncommon") return "uncommon";
+    if (low === "rare") return "rare";
+    if (low === "very rare") return "very rare";
+    if (low === "lure") return "lure";
+    return "common";
+  }
+
+  function computeScore(enc, rarity) {
+    let e = normalizeEnc(enc);
+    let r = normalizeRarity(rarity);
+    let base = ENCOUNTER_BASE[e] || 0;
+    let bonus = RARITY_BONUS[r] || 0;
+    return base + bonus;
+  }
+
+  // Global data
+  let masterPokemonMap = new Map();
+  let allRegionsSet = new Set();
+  
+  // Multi-character
+  let characters = [];
+  let currentCharId = null;
+  let caughtMap = new Map();
+
+  // UI filters
+  let activeRegions = new Set();
+  let activeEncounters = new Set(["grass","dark grass","cave","water","super rod","good rod","old rod","rocks","headbutt"]);
+  let searchTerm = "";
+
+  // Load JSON
+  async function loadJSON() {
+    try {
+      const response = await fetch('data.json');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const jsonData = await response.json();
+      parseSpawnData(jsonData);
+      document.getElementById("dataStatus").innerHTML = `✅ Loaded ${masterPokemonMap.size} Pokémon from data.json`;
+      document.getElementById("dataStatus").classList.remove("warning");
+      initCharacters();
+      renderAll();
+    } catch (err) {
+      document.getElementById("dataStatus").innerHTML = `⚠️ data.json not found. Make sure it's in the same folder.`;
+      document.getElementById("dataStatus").classList.add("warning");
+    }
+  }
+
+  function parseSpawnData(data) {
+    masterPokemonMap.clear();
+    allRegionsSet.clear();
+    for (let key in data) {
+      let area = data[key];
+      let regionRaw = area.region || "KANTO";
+      let regionName = regionRaw.charAt(0).toUpperCase() + regionRaw.slice(1).toLowerCase();
+      allRegionsSet.add(regionName);
+      let encounters = area.encounters || [];
+      for (let enc of encounters) {
+        let pokeName = enc.pokemon ? enc.pokemon.charAt(0).toUpperCase() + enc.pokemon.slice(1) : "Unknown";
+        let encType = enc.type || "Grass";
+        let rarity = enc.rarity || "Common";
+        let route = area.name || "Unknown";
+        let lowerName = pokeName.toLowerCase();
+        if (!masterPokemonMap.has(lowerName)) {
+          masterPokemonMap.set(lowerName, { name: pokeName, locations: [] });
+        }
+        let entry = masterPokemonMap.get(lowerName);
+        let score = computeScore(encType, rarity);
+        entry.locations.push({
+          region: regionName,
+          route: route,
+          rarity: rarity.toLowerCase(),
+          encounterType: normalizeEnc(encType),
+          score: score,
+          rawEnc: encType
+        });
+      }
+    }
+    for (let entry of masterPokemonMap.values()) {
+      entry.bestLocation = entry.locations.reduce((best, cur) => cur.score > best.score ? cur : best, entry.locations[0]);
+    }
+    activeRegions.clear();
+    for (let r of allRegionsSet) activeRegions.add(r);
+  }
+
+  // Character management
+  function initCharacters() {
+    let stored = localStorage.getItem("pokedex_chars");
+    if (stored) {
+      try {
+        let data = JSON.parse(stored);
+        characters = data.chars || [];
+        currentCharId = data.currentId || (characters[0]?.id || null);
+        if (characters.length === 0) createDefaultCharacter();
+      } catch(e) { createDefaultCharacter(); }
+    } else {
+      createDefaultCharacter();
+    }
+    loadCaughtProgress();
+    updateCharacterSelectUI();
+  }
+
+  function createDefaultCharacter() {
+    characters = [{ id: Date.now(), name: "Trainer" }];
+    currentCharId = characters[0].id;
+    saveCharacters();
+  }
+
+  function saveCharacters() {
+    localStorage.setItem("pokedex_chars", JSON.stringify({ chars: characters, currentId: currentCharId }));
+  }
+
+  function loadCaughtProgress() {
+    caughtMap.clear();
+    for (let char of characters) {
+      let stored = localStorage.getItem(`caught_${char.id}`);
+      let progress = new Map();
+      if (stored) {
+        try {
+          let obj = JSON.parse(stored);
+          for (let [k, v] of Object.entries(obj)) progress.set(k, v);
+        } catch(e) {}
+      }
+      caughtMap.set(char.id, progress);
+    }
+  }
+
+  function saveCaughtForCharacter(charId) {
+    let progress = caughtMap.get(charId) || new Map();
+    let obj = {};
+    for (let [k, v] of progress.entries()) obj[k] = v;
+    localStorage.setItem(`caught_${charId}`, JSON.stringify(obj));
+  }
+
+  function getCurrentCaughtMap() {
+    if (!currentCharId) return new Map();
+    if (!caughtMap.has(currentCharId)) caughtMap.set(currentCharId, new Map());
+    return caughtMap.get(currentCharId);
+  }
+
+  function isCaught(key) { return getCurrentCaughtMap().get(key) === true; }
+  function setCaught(key, caught) { getCurrentCaughtMap().set(key, caught); saveCaughtForCharacter(currentCharId); }
+
+  function addCharacter() {
+    let newId = Date.now();
+    characters.push({ id: newId, name: `Trainer ${characters.length + 1}` });
+    caughtMap.set(newId, new Map());
+    currentCharId = newId;
+    saveCharacters();
+    saveCaughtForCharacter(newId);
+    updateCharacterSelectUI();
+    renderPokedex();
+    renderRoutes();
+  }
+
+  function renameCurrentCharacter() {
+    let newName = prompt("New name:", getCurrentCharacterName());
+    if (newName && newName.trim()) {
+      let idx = characters.findIndex(c => c.id === currentCharId);
+      if (idx !== -1) characters[idx].name = newName.trim();
+      saveCharacters();
+      updateCharacterSelectUI();
+      renderPokedex();
+    }
+  }
+
+  function deleteCurrentCharacter() {
+    if (characters.length <= 1) { alert("Need at least one character."); return; }
+    if (confirm(`Delete "${getCurrentCharacterName()}"?`)) {
+      characters = characters.filter(c => c.id !== currentCharId);
+      currentCharId = characters[0].id;
+      saveCharacters();
+      loadCaughtProgress();
+      updateCharacterSelectUI();
+      renderPokedex();
+      renderRoutes();
+    }
+  }
+
+  function getCurrentCharacterName() { return characters.find(c => c.id === currentCharId)?.name || "Trainer"; }
+  function updateCharacterSelectUI() {
+    let select = document.getElementById("characterSelect");
+    select.innerHTML = characters.map(c => `<option value="${c.id}" ${c.id === currentCharId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+    select.onchange = (e) => { currentCharId = parseInt(e.target.value); saveCharacters(); renderPokedex(); renderRoutes(); };
+  }
+
+  // Get best visible location (excluding special encounter types from routing)
+  function getVisibleBest(entry) {
+    let visible = entry.locations.filter(l => 
+      activeEncounters.has(l.encounterType) && 
+      activeRegions.has(l.region) &&
+      !EXCLUDED_ENCOUNTERS.has(l.encounterType)
+    );
+    if (visible.length === 0) return null;
+    return visible.reduce((best, cur) => cur.score > best.score ? cur : best, visible[0]);
+  }
+
+  // Sprite helper
+  function getSpriteId(name) {
+    const simple = { "bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleon":5,"charizard":6,"squirtle":7,"wartortle":8,"blastoise":9,"caterpie":10,"metapod":11,"butterfree":12,"weedle":13,"kakuna":14,"beedrill":15,"pidgey":16,"pidgeotto":17,"pidgeot":18,"rattata":19,"raticate":20,"spearow":21,"fearow":22,"ekans":23,"arbok":24,"pikachu":25,"raichu":26,"sandshrew":27,"sandslash":28,"nidoran-f":29,"nidorina":30,"nidoqueen":31,"nidoran-m":32,"nidorino":33,"nidoking":34,"clefairy":35,"clefable":36,"vulpix":37,"ninetales":38,"jigglypuff":39,"wigglytuff":40,"zubat":41,"golbat":42,"oddish":43,"gloom":44,"vileplume":45,"paras":46,"parasect":47,"venonat":48,"venomoth":49,"diglett":50,"dugtrio":51,"meowth":52,"persian":53,"psyduck":54,"golduck":55,"mankey":56,"primeape":57,"growlithe":58,"arcanine":59,"poliwag":60,"poliwhirl":61,"poliwrath":62,"abra":63,"kadabra":64,"alakazam":65,"machop":66,"machoke":67,"machamp":68,"bellsprout":69,"weepinbell":70,"victreebel":71,"tentacool":72,"tentacruel":73,"geodude":74,"graveler":75,"golem":76,"ponyta":77,"rapidash":78,"slowpoke":79,"slowbro":80,"magnemite":81,"magneton":82,"farfetchd":83,"doduo":84,"dodrio":85,"seel":86,"dewgong":87,"grimer":88,"muk":89,"shellder":90,"cloyster":91,"gastly":92,"haunter":93,"gengar":94,"onix":95,"drowzee":96,"hypno":97,"krabby":98,"kingler":99,"voltorb":100,"electrode":101,"exeggcute":102,"exeggutor":103,"cubone":104,"marowak":105,"hitmonlee":106,"hitmonchan":107,"lickitung":108,"koffing":109,"weezing":110,"rhyhorn":111,"rhydon":112,"chansey":113,"tangela":114,"kangaskhan":115,"horsea":116,"seadra":117,"goldeen":118,"seaking":119,"staryu":120,"starmie":121,"mr-mime":122,"scyther":123,"jynx":124,"electabuzz":125,"magmar":126,"pinsir":127,"tauros":128,"magikarp":129,"gyarados":130,"lapras":131,"ditto":132,"eevee":133,"vaporeon":134,"jolteon":135,"flareon":136,"porygon":137,"omanyte":138,"omastar":139,"kabuto":140,"kabutops":141,"aerodactyl":142,"snorlax":143,"articuno":144,"zapdos":145,"moltres":146,"dratini":147,"dragonair":148,"dragonite":149,"mewtwo":150,"mew":151 };
+    let lower = name.toLowerCase();
+    if (simple[lower]) return simple[lower];
+    return 25;
+  }
+
+  function renderFilters() {
+    const regionDiv = document.getElementById("regionFilters");
+    regionDiv.innerHTML = Array.from(allRegionsSet).sort().map(reg => `<div class="filter-chip ${activeRegions.has(reg) ? 'active' : 'disabled'}" data-region="${reg}">${reg}</div>`).join('');
+    document.querySelectorAll('[data-region]').forEach(chip => {
+      chip.onclick = () => { let r = chip.dataset.region; if (activeRegions.has(r)) activeRegions.delete(r); else activeRegions.add(r); renderFilters(); renderPokedex(); renderRoutes(); };
+    });
+    const encOrder = ["grass","dark grass","cave","water","super rod","good rod","old rod","rocks","headbutt"];
+    const encDiv = document.getElementById("encounterFilters");
+    encDiv.innerHTML = encOrder.map(enc => `<div class="filter-chip ${activeEncounters.has(enc) ? 'active' : 'disabled'}" data-enc="${enc}">${enc.charAt(0).toUpperCase() + enc.slice(1)}</div>`).join('');
+    document.querySelectorAll('[data-enc]').forEach(chip => {
+      chip.onclick = () => { let e = chip.dataset.enc; if (activeEncounters.has(e)) activeEncounters.delete(e); else activeEncounters.add(e); renderFilters(); renderPokedex(); renderRoutes(); };
+    });
+  }
+
+  function renderPokedex() {
+    if (masterPokemonMap.size === 0) { document.getElementById("pokedexGrid").innerHTML = '<div class="small-note">No data loaded</div>'; return; }
+    let filtered = Array.from(masterPokemonMap.values()).filter(mon => {
+      if (searchTerm && !mon.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      return getVisibleBest(mon) !== null;
+    });
+    filtered.sort((a,b) => a.name.localeCompare(b.name));
+    let caughtCount = filtered.filter(mon => isCaught(mon.name.toLowerCase())).length;
+    let percent = filtered.length ? Math.round((caughtCount/filtered.length)*100) : 0;
+    document.getElementById("progressText").innerHTML = `${caughtCount}/${filtered.length} (${percent}%) · ${escapeHtml(getCurrentCharacterName())}`;
+    document.getElementById("progressBar").style.width = `${percent}%`;
+    document.getElementById("pokedexGrid").innerHTML = filtered.map(mon => {
+      let spriteId = getSpriteId(mon.name);
+      let caught = isCaught(mon.name.toLowerCase());
+      return `<div class="pokemon-card ${caught ? 'caught' : ''}" data-name="${mon.name}">
+        <img class="pokemon-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${spriteId}.png" onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spriteId}.png'" loading="lazy" alt="${mon.name}">
+        <div class="pokemon-name">${escapeHtml(mon.name)}</div>
+        <div class="${caught ? 'caught-badge' : 'missing-badge'}">${caught ? '✓' : '○'}</div>
+      </div>`;
+    }).join('');
+    document.querySelectorAll('.pokemon-card').forEach(card => {
+      card.onclick = () => { let name = card.dataset.name; setCaught(name.toLowerCase(), !isCaught(name.toLowerCase())); renderPokedex(); renderRoutes(); };
+    });
+  }
+
+  function renderRoutes() {
+    if (masterPokemonMap.size === 0) { document.getElementById("routesOutput").innerHTML = '<div class="small-note">Load data first</div>'; return; }
+    let missing = [];
+    for (let entry of masterPokemonMap.values()) {
+      if (isCaught(entry.name.toLowerCase())) continue;
+      let visBest = getVisibleBest(entry);
+      if (visBest) missing.push({ name: entry.name, loc: visBest, score: visBest.score });
+    }
+    if (missing.length === 0) { document.getElementById("routesOutput").innerHTML = '<div class="small-note">🎉 Complete! You caught everything with active filters.</div>'; return; }
+    let routeMap = new Map();
+    for (let m of missing) {
+      let key = `${m.loc.region}|${m.loc.route}|${m.loc.encounterType}`;
+      if (!routeMap.has(key)) routeMap.set(key, { region: m.loc.region, route: m.loc.route, encounter: m.loc.encounterType, mons: [], totalScore: 0 });
+      let r = routeMap.get(key);
+      r.mons.push(m.name);
+      r.totalScore += m.score;
+    }
+    let routes = Array.from(routeMap.values()).sort((a,b) => b.totalScore - a.totalScore);
+    document.getElementById("routesOutput").innerHTML = routes.slice(0, 20).map(r => `<div class="route-card"><div class="route-title">📍 ${r.region} · ${r.route.replace(/-/g,' ')} (${r.encounter}) — Score: ${r.totalScore}</div><div class="small-note">Missing: ${r.mons.slice(0,10).join(', ')}${r.mons.length>10 ? ` +${r.mons.length-10} more` : ''}</div></div>`).join('');
+  }
+
+  function renderAll() { renderFilters(); renderPokedex(); renderRoutes(); }
+  function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+  document.getElementById("searchInput").addEventListener("input", (e) => { searchTerm = e.target.value; renderPokedex(); });
+  document.getElementById("refreshRoutesBtn").onclick = () => renderRoutes();
+  document.getElementById("addCharacterBtn").onclick = () => { addCharacter(); renderAll(); };
+  document.getElementById("renameCharacterBtn").onclick = () => { renameCurrentCharacter(); updateCharacterSelectUI(); renderPokedex(); };
+  document.getElementById("deleteCharacterBtn").onclick = () => { deleteCurrentCharacter(); renderAll(); };
+
+  loadJSON();
+</script>
+</body>
+</html>
